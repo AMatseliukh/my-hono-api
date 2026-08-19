@@ -1,0 +1,4 @@
+@host = http://localhost:8787
+
+### Liveness check — має повернути 200 і { "ok": true }
+GET {{host}}/health

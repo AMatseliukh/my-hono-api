@@ -1,0 +1,16 @@
+{
+  "name": "my-hono-api",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "hono": "^4.13.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.124.0"
+  }
+}
