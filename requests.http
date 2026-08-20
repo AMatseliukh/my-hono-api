@@ -2,3 +2,6 @@
 
 ### Liveness check — має повернути 200 і { "ok": true }
 GET {{host}}/health
+
+### Тимчасовий роут: уся таблиця todos як є. Видалити, коли запрацює GET /todos
+GET {{host}}/debug
