@@ -1,7 +1,49 @@
 @host = http://localhost:8787
+@id = ПІДСТАВ_ID_З_ВІДПОВІДІ_POST
 
-### Liveness check — має повернути 200 і { "ok": true }
+### Liveness check — 200 { "ok": true }
 GET {{host}}/health
 
-### Тимчасовий роут: уся таблиця todos як є. Видалити, коли запрацює GET /todos
-GET {{host}}/debug
+### Список усіх todo — 200 + масив
+GET {{host}}/todos
+
+### Створити todo — 201 + створений об'єкт
+POST {{host}}/todos
+Content-Type: application/json
+
+{ "title": "Купити молоко" }
+
+### Один todo за id — 200 або 404
+GET {{host}}/todos/{{id}}
+
+### Позначити виконаним — 200 + оновлений об'єкт
+PATCH {{host}}/todos/{{id}}
+Content-Type: application/json
+
+{ "is_done": true }
+
+### Перейменувати — 200 + оновлений об'єкт
+PATCH {{host}}/todos/{{id}}
+Content-Type: application/json
+
+{ "title": "Купити вівсяне молоко" }
+
+### Видалити — 204 без тіла
+DELETE {{host}}/todos/{{id}}
+
+# ─────────── помилкові сценарії ───────────
+
+### 400 — title лише з пробілів
+POST {{host}}/todos
+Content-Type: application/json
+
+{ "title": "   " }
+
+### 400 — is_done не булеве
+PATCH {{host}}/todos/{{id}}
+Content-Type: application/json
+
+{ "is_done": "yes" }
+
+### 404 — неіснуючий id
+GET {{host}}/todos/00000000-0000-0000-0000-000000000000
