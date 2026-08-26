@@ -1,49 +1,102 @@
 @host = http://localhost:8787
+
+# Пошта, пароль і anon-ключ читаються з .env — він у .gitignore,
+# тому облікові дані не потраплять у публічний репозиторій.
+@supabase = {{$dotenv SUPABASE_URL}}
+@anonKey = {{$dotenv SUPABASE_ANON_KEY}}
+
+# Підстав сюди id з відповіді на "Створити todo"
 @id = ПІДСТАВ_ID_З_ВІДПОВІДІ_POST
 
-### Liveness check — 200 { "ok": true }
+# ─────────── відкриті роути ───────────
+
+### Liveness check — 200 { "ok": true }, токен не потрібен
 GET {{host}}/health
 
-### Список усіх todo — 200 + масив
-GET {{host}}/todos
+# ─────────── вхід ───────────
+# Виконай ЦЕЙ запит першим: із його відповіді береться токен
+# для всіх наступних. Токен живе годину — потім повтори.
 
-### Створити todo — 201 + створений об'єкт
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anonKey}}
+Content-Type: application/json
+
+{
+  "email": "{{$dotenv TEST_EMAIL}}",
+  "password": "{{$dotenv TEST_PASSWORD}}"
+}
+
+###
+@token = {{login.response.body.$.access_token}}
+
+# ─────────── CRUD ───────────
+
+### Список своїх todo — 200 + масив
+GET {{host}}/todos
+Authorization: Bearer {{token}}
+
+### Створити todo — 201 + створений об'єкт (user_id проставить база)
 POST {{host}}/todos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "title": "Купити молоко" }
 
 ### Один todo за id — 200 або 404
 GET {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
 
 ### Позначити виконаним — 200 + оновлений об'єкт
 PATCH {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "is_done": true }
 
 ### Перейменувати — 200 + оновлений об'єкт
 PATCH {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "title": "Купити вівсяне молоко" }
 
 ### Видалити — 204 без тіла
 DELETE {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
 
-# ─────────── помилкові сценарії ───────────
+# ─────────── авторизація ───────────
+
+### 401 — без заголовка Authorization (те, що показує браузер)
+GET {{host}}/todos
+
+### 401 — зіпсований токен
+GET {{host}}/todos
+Authorization: Bearer not-a-real-token
+
+# ─────────── валідація ───────────
 
 ### 400 — title лише з пробілів
 POST {{host}}/todos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "title": "   " }
 
 ### 400 — is_done не булеве
 PATCH {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "is_done": "yes" }
 
+### 400 — порожнє тіло
+PATCH {{host}}/todos/{{id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
 ### 404 — неіснуючий id
 GET {{host}}/todos/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
